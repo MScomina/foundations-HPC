@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import argparse as ap
 import json
 import os
@@ -75,7 +73,7 @@ def main(osu_loc: str | None = None) -> None:
         ("osu_gather", "coll_tuned_gather_algorithm"),
     )
 
-    n_iterations: int = int(os.getenv("N_ITERATIONS"))
+    n_iterations: int = int(os.environ["N_ITERATIONS"])
     out_file = "./the_results_of_osu.json"
     try:
         n_cpus_per_node = int(os.environ["SLURM_NTASKS_PER_NODE"])
