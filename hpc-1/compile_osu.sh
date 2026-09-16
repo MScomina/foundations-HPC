@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=THIN
-#SBATCH --job-name=osu_compilation_
+#SBATCH --job-name=osu_compilation
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=15gb
 #SBATCH --time=00:15:00

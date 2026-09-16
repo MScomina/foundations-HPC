@@ -70,7 +70,7 @@ def main(osu_loc: str | None = None) -> None:
     algorithms = ["1", "2", "3"]
     tasks = (
         ("osu_bcast", "coll_tuned_bcast_algorithm"),
-        ("osu_gather", "coll_tuned_gather_algorithm"),
+        ("osu_scatter", "coll_tuned_scatter_algorithm"),
     )
 
     n_iterations: int = int(os.environ["N_ITERATIONS"])

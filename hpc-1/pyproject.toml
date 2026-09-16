@@ -9,6 +9,3 @@ license = { text = "MIT" }
 dependencies = [
     "matplotlib~=3.11.0"
 ]
-
-[tool.uv]
-python-version = "3.13"
