@@ -5,12 +5,12 @@
 #SBATCH --ntasks=48
 #SBATCH --exclusive
 #SBATCH --mem=15gb
-#SBATCH --time=01:00:00
+#SBATCH --time=01:45:00
 #SBATCH --output=./logs/output%j.out
 
 if [ ! -f .env ]; then
 	cp .env.example .env
-	echo "Created .env from .env.example"
+	echo "Created .env from .env.example."
 fi
 
 set -a; source .env set +a

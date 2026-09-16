@@ -71,7 +71,6 @@ __pycache__/
 *.pyo
 *.pyd
 *.pyc
-*.pyo
 .Python
 env/
 venv/

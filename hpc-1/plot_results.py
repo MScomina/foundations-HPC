@@ -1,30 +1,3 @@
-"""Plot OSU benchmark results produced by :mod:`tests.py`.
-
-The :mod:`tests.py` script writes a JSON file named ``the_results_of_osu.json``
-containing a nested dictionary structure::
-
-    {
-        "osu_bcast": {
-            "1": { 2: [run1, run2, ...], 4: [...], ... },
-            "2": { ... }
-        },
-        "osu_gather": { ... },
-        "naive model": {
-            "1": { 2: [run1, run2, ...] }
-        }
-    }
-
-Each *run* is a list of rows read from the OSU benchmark output.  The
-first row is a header containing the column names; all subsequent rows are
-numeric values.
-
-This script reads the JSON file, averages the numeric values over all
-repetitions for a given ``algorithm``/``num_processes`` combination, and
-produces a matplotlib figure for each benchmark task.  The resulting PNG
-files are written to a directory supplied via the ``--out`` command line
-option (default: ``results_plots``).
-"""
-
 import argparse
 import json
 import pathlib
@@ -33,29 +6,20 @@ import statistics
 import matplotlib.pyplot as plt
 
 
-def _average_runs(runs: list[list[list]]) -> tuple[list[float], list[float]]:
-    """Return (sizes, values) averaged over ``runs``.
-
-    Each element of ``runs`` is a list of rows (as produced by
-    :func:`tests.parse_osu_output`).  The first row is the header.
-    The function assumes that all runs have the same header and the same
-    set of sizes in the same order.
-    """
+def _average_runs(runs: list[list[list]]) -> tuple[list[float], list[float], list[float]]:
     if not runs:
-        return [], []
+        return [], [], []
 
-    # The header row is not needed for the averaging logic
-    n_rows = len(runs[0]) - 1  # number of data rows
+    n_rows = len(runs[0]) - 1
 
     sizes: list[float] = []
-    avg_values: list[float] = []
+    means: list[float] = []
+    stds: list[float] = []
 
     for row_idx in range(n_rows):
-        # Collect the values for this row from all runs
-        values = []
+        values: list[float] = []
         for run in runs:
-            data_row = run[row_idx + 1]  # skip header
-            # Some benchmarks use a string for size; cast to float
+            data_row = run[row_idx + 1]
             try:
                 size = float(data_row[0])
             except ValueError:
@@ -64,31 +28,31 @@ def _average_runs(runs: list[list[list]]) -> tuple[list[float], list[float]]:
             if not sizes:
                 sizes.append(size)
 
-        avg_values.append(statistics.mean(values))
+        means.append(statistics.mean(values))
+        if len(values) > 1:
+            stds.append(statistics.stdev(values))
+        else:
+            stds.append(0.0)
 
-    return sizes, avg_values
+    return sizes, means, stds
 
 
 def plot_task(task_name: str, task_data: dict, out_dir: pathlib.Path):
-    """Create a figure for a single benchmark task.
-
-    Parameters
-    ----------
-    task_name:
-        Name of the task (e.g., ``osu_bcast``).
-    task_data:
-        Nested dictionary mapping algorithm → num_processes → list of runs.
-    out_dir:
-        Directory where the PNG file will be written.
-    """
     plt.figure(figsize=(10, 6))
     for alg, np_map in task_data.items():
         for np_count, runs in np_map.items():
-            sizes, values = _average_runs(runs)
+            sizes, means, stds = _average_runs(runs)
             if not sizes:
                 continue
             label = f"alg {alg}, {np_count}p"
-            plt.plot(sizes, values, marker="o", label=label)
+            plt.plot(sizes, means, marker="o", label=label)
+            # Confidence interval (95%) assuming normal distribution
+            if len(runs) > 1 and any(stds):
+                # z value for 95% CI
+                z = 1.96
+                ci_upper = [m + z * s / (len(runs) ** 0.5) for m, s in zip(means, stds)]
+                ci_lower = [m - z * s / (len(runs) ** 0.5) for m, s in zip(means, stds)]
+                plt.fill_between(sizes, ci_lower, ci_upper, alpha=0.2)
 
     plt.title(f"{task_name} results")
     plt.xlabel("Size")

@@ -138,7 +138,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "matplotlib", specifier = ">=3.11.2" }]
+requires-dist = [{ name = "matplotlib", specifier = "~=3.11.0" }]
 
 [[package]]
 name = "kiwisolver"
