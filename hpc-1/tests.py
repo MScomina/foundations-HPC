@@ -7,13 +7,6 @@ from pathlib import Path
 
 
 def parse_osu_output(output: bytes) -> list[list[str | float]]:
-    """
-    Convert the raw stdout of an osu benchmark into a list-of-lists structure.
-
-    The first line that starts with ``#`` contains the column names – it is
-    stripped from the ``#`` and saved as the header.  All other lines are
-    numeric results converted to floats.
-    """
     text = output.decode("utf-8")
     rows: list[list[str | float]] = []
 
@@ -112,7 +105,7 @@ def main(osu_loc: str | None = None) -> None:
         data = run_benchmark(cmd)
         if data:
             data[0] = ["Size", "Latency (us)"]
-        results["naive model"][1][2].append(data)
+        results["naive_model"][1][2].append(data)
 
 
     with open(out_file, "w") as fp:
