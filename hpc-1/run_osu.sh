@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=THIN
-#SBATCH --job-name=osu_bcast_scatter
+#SBATCH --job-name=osu_bcast_reduce
 #SBATCH --ntasks-per-node=24
 #SBATCH --ntasks=48
 #SBATCH --exclusive

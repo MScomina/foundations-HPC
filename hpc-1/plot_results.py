@@ -70,7 +70,7 @@ def plot_task(task_name: str, task_data: dict, out_dir: pathlib.Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Plot OSU benchmark results.")
-    parser.add_argument("--json", default="osu_bcast_scatter_results.json",
+    parser.add_argument("--json", default="osu_bcast_reduce_results.json",
                         help="Path to the JSON file produced by tests.py")
     parser.add_argument("--out", default="results_plots",
                         help="Output directory for PNG files")

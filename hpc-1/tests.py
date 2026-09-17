@@ -67,14 +67,14 @@ def main(osu_loc: str | None = None) -> None:
         "--mca",
     ]
 
-    algorithms = ["1", "2", "3"]
+    algorithms = ["1", "3", "6"]
     tasks = (
         ("osu_bcast", "coll_tuned_bcast_algorithm"),
-        ("osu_scatter", "coll_tuned_scatter_algorithm"),
+        ("osu_reduce", "coll_tuned_reduce_algorithm"),
     )
 
     n_iterations: int = int(os.environ["N_ITERATIONS"])
-    out_file = "./osu_bcast_scatter_results.json"
+    out_file = "./osu_bcast_reduce_results.json"
     try:
         n_cpus_per_node = int(os.environ["SLURM_NTASKS_PER_NODE"])
     except KeyError as exc:
