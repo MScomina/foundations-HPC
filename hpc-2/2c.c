@@ -4,19 +4,27 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 #include <mpi.h>
 
+#define MPI_MASTER_TO_WORKER 1
+#define MPI_WORKER_TO_MASTER_TILE 2
+#define MPI_WORKER_TO_MASTER_DATA 3
+#define MPI_WORK_TERM_TAG 4
+
 /*
  *  Forward declaration of the PGM helper functions defined in
- *  read_write_pgm_image.c.  The actual definitions are compiled
+ *  read_write_pgm_image.c. The actual definitions are compiled
  *  alongside this file, so we only need the prototype here.
  */
 void write_pgm_image(void *image, int maxval, int xsize, int ysize, const char *image_name);
 void swap_image(void *image, int xsize, int ysize, int maxval);
+
+static MPI_Datatype pixel_type;
 
 typedef struct {
     int x;
@@ -46,8 +54,12 @@ static bool parse_ld(const char* s, long double* out) {
     return true;
 }
 
-static tile_t* make_tile_list(int n_y, int n_tiles) {
+static tile_t* make_tile_list(int n_y, unsigned int n_tiles) {
     tile_t* tiles = (tile_t*)calloc(n_tiles, sizeof(tile_t));
+    if (!tiles) {
+        fprintf(stderr, "Failed to allocate tile list.\n");
+        MPI_Abort(MPI_COMM_WORLD, MPI_ERR_NO_MEM);
+    }
     int base   = n_y / n_tiles;
     int extra  = n_y % n_tiles;
     int r      = 0;
@@ -84,7 +96,7 @@ bool compute_mandelbrot(
     pixel* restrict pixels, 
     const complex double btm_left,
     const complex double top_right,
-    const int n_x, 
+    const int n_x,
     const int n_y,
     const unsigned int i_max,
     tile_t tile
@@ -96,7 +108,7 @@ bool compute_mandelbrot(
         collapse(2) \
         schedule(dynamic, 64) \
         default(none) \
-        shared(pixels, btm_left, top_right, dy, dx, i_max, n_x, n_y) \
+        shared(pixels, btm_left, top_right, dy, dx, i_max, n_x, n_y, tile) \
         proc_bind(spread)
     #endif
     for (int line = tile.start_row; line<tile.end_row; line++) {
@@ -163,6 +175,9 @@ static void save_image(pixel* pixels,
     }
 }
 
+/**
+ * Master workload function. It is only ever executed by rank 0 of the MPI stack.
+ */
 static pixel* master_workload(
     const complex double btm_left,
     const complex double top_right,
@@ -170,7 +185,8 @@ static pixel* master_workload(
     const int n_y,
     const unsigned int i_max
     ) {
-    /* Allocate the pixel buffer and initialize coordinates */
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     unsigned int number_pixels = n_x * n_y;
     pixel *pixels = (pixel*)calloc(number_pixels, sizeof(pixel));
     if (!pixels) {
@@ -179,28 +195,50 @@ static pixel* master_workload(
     }
     init_pixels(pixels, n_x, n_y);
 
-    /* Determine number of tiles based on MPI world size */
-    int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     if (world_size == 1) {
-        // If only one MPI process is detected then the master is responsible for computing the entire Mandelbrot.
-        // Additional if statement to check removes the overhead of the master-worker structure.
         compute_mandelbrot(pixels, btm_left, top_right, n_x, n_y, i_max, (tile_t){0, n_y});
         return pixels;
     }
-    int n_tiles = world_size;
+
+    unsigned int workers = world_size - 1;
+    unsigned int n_tiles = 4 * workers;
+    unsigned int tile_index = 0;
     tile_t *tiles = make_tile_list(n_y, n_tiles);
-    if (!tiles) {
-        fprintf(stderr, "Failed to allocate tile list.\n");
-        free(pixels);
-        MPI_Abort(MPI_COMM_WORLD, MPI_ERR_NO_MEM);
+
+    // Initially send one tile to each worker up to number of tiles.
+    // WARNING: This always assumes n_tiles > workers!
+    for (int w = 0; w < workers; w++, tile_index++) {
+        MPI_Send(&tiles[tile_index], 2, MPI_UNSIGNED, w + 1, MPI_MASTER_TO_WORKER, MPI_COMM_WORLD);
     }
 
-    // TODO: Implement MPI broadcast/scatter.
+    MPI_Status status;
+    tile_t tile;
+    // The while contains the + workers in order to stop them after all the tiles are completed.
+    while (tile_index < n_tiles + workers) {
 
+        MPI_Recv(&tile, 2, MPI_UNSIGNED, MPI_ANY_SOURCE, MPI_WORKER_TO_MASTER_TILE, MPI_COMM_WORLD, &status);
+        unsigned int n_rows = tile.end_row - tile.start_row;
+
+        // Receive pixel data for this tile
+        pixel *buf = (pixel*)malloc(n_rows * n_x * sizeof(pixel));
+        MPI_Recv(buf, n_rows * n_x, pixel_type, MPI_ANY_SOURCE, MPI_WORKER_TO_MASTER_DATA, MPI_COMM_WORLD, &status);
+        int src = status.MPI_SOURCE;
+        memcpy(&pixels[tile.start_row * n_x], buf, n_rows * n_x * sizeof(pixel));
+        free(buf);
+
+        if (tile_index < n_tiles) {
+            // Send next tile if available.
+            MPI_Send(&tiles[tile_index], 2, MPI_UNSIGNED, src, MPI_MASTER_TO_WORKER, MPI_COMM_WORLD);
+        } else {
+            // No more tiles available. Stop worker.
+            MPI_Send(NULL, 0, MPI_UNSIGNED, src, MPI_WORK_TERM_TAG, MPI_COMM_WORLD);
+        }
+        tile_index++;
+    }
     free(tiles);
     return pixels;
 }
+
 static void worker_workload(
     const complex double btm_left,
     const complex double top_right,
@@ -208,17 +246,38 @@ static void worker_workload(
     const int n_y,
     const unsigned int i_max
 ) {
-
+    MPI_Status status;
+    tile_t tile;
+    // Do-while loop because it has to enter at least once.
+    do {
+        MPI_Recv(&tile, 2, MPI_UNSIGNED, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        if (status.MPI_TAG == MPI_WORK_TERM_TAG) {
+            break;
+        }
+        int n_rows = tile.end_row - tile.start_row;
+        pixel *pixels = (pixel*)calloc(n_x * n_y, sizeof(pixel));
+        if (!pixels) {
+            fprintf(stderr, "Failed to allocate pixel buffer in worker.\n");
+            MPI_Abort(MPI_COMM_WORLD, MPI_ERR_NO_MEM);
+        }
+        init_pixels(pixels, n_x, n_rows);
+        compute_mandelbrot(pixels, btm_left, top_right, n_x, n_y, i_max, tile);
+        MPI_Send(&tile, 2, MPI_UNSIGNED, 0, MPI_WORKER_TO_MASTER_TILE, MPI_COMM_WORLD);
+        MPI_Send(&pixels[tile.start_row * n_x], n_rows * n_x, pixel_type, 0, MPI_WORKER_TO_MASTER_DATA, MPI_COMM_WORLD);
+        free(pixels);
+    } while (status.MPI_TAG != MPI_WORK_TERM_TAG);
 }
 
 int main(int argc, char* argv[]) {
     int mpi_provided_thread_level; 
-    MPI_Init_threads(&argc, &argv, MPI_THREAD_FUNNELED, &mpi_provided_thread_level); 
-    if (mpi_provided_thread_level < MPI_THREAD_FUNNELED) { 
-        printf("A problem arose when asking for MPI_THREAD_FUNNELED level.\n"); 
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &mpi_provided_thread_level);
+    if (mpi_provided_thread_level < MPI_THREAD_FUNNELED) {
+        fprintf(stderr, "A problem arose when asking for MPI_THREAD_FUNNELED level.\n"); 
         MPI_Abort(MPI_COMM_WORLD, MPI_ERR_ARG);
-        return 1; 
-    } 
+        return 1;
+    }
+    MPI_Type_contiguous(sizeof(pixel), MPI_BYTE, &pixel_type);
+    MPI_Type_commit(&pixel_type);
     if (argc < 8) {
         fprintf(stderr, "Please enter all of the required arguments (specifically, in order: n_x, n_y, x_L, y_L, x_R, y_R, I_max).");
         MPI_Abort(MPI_COMM_WORLD, MPI_ERR_ARG);
@@ -267,12 +326,20 @@ int main(int argc, char* argv[]) {
     const complex double top_right = x_r + y_r*I;
 
     const unsigned int number_pixels = n_x * n_y;
+    
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     // There is some potential for threads affinity here.
-    // Master workload handles allocation, initialization, and computation.
-    pixel *master_pixels = master_workload(btm_left, top_right, n_x, n_y, i_max);
-    const char *outfilename = "mandelbrot.pgm";
-    save_image(master_pixels, n_x, n_y, i_max, outfilename);
-    free(master_pixels);
+    if (world_rank == 0) {
+        // Master workload handles allocation, initialization, and computation.
+        pixel *master_pixels = master_workload(btm_left, top_right, n_x, n_y, i_max);
+        const char *outfilename = "mandelbrot.pgm";
+        save_image(master_pixels, n_x, n_y, i_max, outfilename);
+        free(master_pixels);
+    } else {
+        worker_workload(btm_left, top_right, n_x, n_y, i_max);
+    }
+    MPI_Type_free(&pixel_type);
     MPI_Finalize(); 
     return 0;
 }
