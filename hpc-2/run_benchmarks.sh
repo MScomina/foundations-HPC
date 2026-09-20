@@ -16,4 +16,9 @@ fi
 set -a; source .env set +a
 
 module load "$MPI_MODULE"
+
+python3 -m venv $TMPDIR/venv
+source $TMPDIR/venv/bin/activate
+
+pip install -r ../requirements.txt
 python3 benchmark_plots.py

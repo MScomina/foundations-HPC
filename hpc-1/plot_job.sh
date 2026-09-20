@@ -8,5 +8,5 @@
 python3 -m venv $TMPDIR/venv
 source $TMPDIR/venv/bin/activate
 
-pip install matplotlib
+pip install -r ../requirements.txt
 python3 plot_results.py
