@@ -130,7 +130,7 @@ wheels = [
 ]
 
 [[package]]
-name = "foundations-hpc-1"
+name = "foundations-hpc"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [

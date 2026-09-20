@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=THIN
-#SBATCH --job-name=compile_HPC_project
+#SBATCH --job-name=mandelbrot_compilation
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=15gb
 #SBATCH --time=00:10:00

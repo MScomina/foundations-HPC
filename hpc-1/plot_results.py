@@ -6,6 +6,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Note: part of the plotting code has been created with the help of AI, more precisely the model gpt-oss:20b.
+
 VARIANT_TITLES = {
     "naive_model": {
         1: "p2p"

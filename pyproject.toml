@@ -1,7 +1,7 @@
 [project]
-name = "foundations-hpc-1"
+name = "foundations-hpc"
 version = "1.0.0"
-description = "Foundations of HPC – Exercise 1"
+description = "Foundations of HPC"
 readme = "README.md"
 requires-python = ">=3.13"
 license = { text = "MIT" }
