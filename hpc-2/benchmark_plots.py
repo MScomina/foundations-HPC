@@ -16,7 +16,7 @@ BIN = Path("./2c")
 N_RUNS = 10
 
 # Region of the complex plane to explore (x_l, y_l, x_r, y_r)
-REGION = (-2.0, -1.5, 1.0, 1.5)
+REGION = (0.35787121, 0.1081397025, 0.35787122, 0.1081397125)
 
 # Iteration limit for the Mandelbrot calculation
 I_MAX = 3000
