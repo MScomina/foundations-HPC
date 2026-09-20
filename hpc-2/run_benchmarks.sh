@@ -3,6 +3,7 @@
 #SBATCH --job-name=mandelbrot_benchmark
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=24
+#SBATCH --ntasks=48
 #SBATCH --exclusive
 #SBATCH --mem=15gb
 #SBATCH --time=01:45:00

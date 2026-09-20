@@ -77,9 +77,11 @@ static tile_t* make_tile_list(int n_y, unsigned int n_tiles) {
  * Function responsible for the starting initialization of the pixels array.
  */
 static void init_pixels(pixel* restrict pixels, const unsigned int n_x, const unsigned int n_y) {
+    #ifdef _OPENMP
     #pragma omp parallel for \
         collapse(2) \
         schedule(static)
+    #endif
     for (unsigned int row = 0; row < n_y; row++) {
         for (unsigned int column = 0; column < n_x; column++) {
             pixel* current_pixel = &pixels[row * n_x + column];
@@ -114,7 +116,7 @@ bool compute_mandelbrot(
     for (int line = tile.start_row; line<tile.end_row; line++) {
         const double c_im = cimag(btm_left) + line * dy;
         for(int column = 0; column<n_x; column++) {
-            int idx = line * n_x + column;
+            int idx = (line - tile.start_row) * n_x + column;
             const double c_re = creal(btm_left) + column * dx;
             pixel* current_pixel = &pixels[idx];
             double z_re = 0.0;
@@ -217,12 +219,12 @@ static pixel* master_workload(
     while (tile_index < n_tiles + workers) {
 
         MPI_Recv(&tile, 2, MPI_UNSIGNED, MPI_ANY_SOURCE, MPI_WORKER_TO_MASTER_TILE, MPI_COMM_WORLD, &status);
+        int src = status.MPI_SOURCE;
         unsigned int n_rows = tile.end_row - tile.start_row;
 
         // Receive pixel data for this tile
         pixel *buf = (pixel*)malloc(n_rows * n_x * sizeof(pixel));
-        MPI_Recv(buf, n_rows * n_x, pixel_type, MPI_ANY_SOURCE, MPI_WORKER_TO_MASTER_DATA, MPI_COMM_WORLD, &status);
-        int src = status.MPI_SOURCE;
+        MPI_Recv(buf, n_rows * n_x, pixel_type, src, MPI_WORKER_TO_MASTER_DATA, MPI_COMM_WORLD, &status);
         memcpy(&pixels[tile.start_row * n_x], buf, n_rows * n_x * sizeof(pixel));
         free(buf);
 
@@ -255,7 +257,7 @@ static void worker_workload(
             break;
         }
         int n_rows = tile.end_row - tile.start_row;
-        pixel *pixels = (pixel*)calloc(n_x * n_y, sizeof(pixel));
+        pixel *pixels = (pixel*)calloc(n_x * n_rows, sizeof(pixel));
         if (!pixels) {
             fprintf(stderr, "Failed to allocate pixel buffer in worker.\n");
             MPI_Abort(MPI_COMM_WORLD, MPI_ERR_NO_MEM);
@@ -263,7 +265,7 @@ static void worker_workload(
         init_pixels(pixels, n_x, n_rows);
         compute_mandelbrot(pixels, btm_left, top_right, n_x, n_y, i_max, tile);
         MPI_Send(&tile, 2, MPI_UNSIGNED, 0, MPI_WORKER_TO_MASTER_TILE, MPI_COMM_WORLD);
-        MPI_Send(&pixels[tile.start_row * n_x], n_rows * n_x, pixel_type, 0, MPI_WORKER_TO_MASTER_DATA, MPI_COMM_WORLD);
+        MPI_Send(pixels, n_rows * n_x, pixel_type, 0, MPI_WORKER_TO_MASTER_DATA, MPI_COMM_WORLD);
         free(pixels);
     } while (status.MPI_TAG != MPI_WORK_TERM_TAG);
 }
