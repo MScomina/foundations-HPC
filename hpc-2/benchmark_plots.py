@@ -32,7 +32,7 @@ NUM_PROCESSES = [k for k in range(2, MAX_CORES+1, 2)]
 NUM_THREADS = [k for k in range(2, MAX_CORES+1, 2)]
 
 # Binding option for mpirun (e.g., "socket", "core", or "none")
-BIND_TO = "socket"
+BIND_TO = "none"
 
 @dataclass
 class Result:
