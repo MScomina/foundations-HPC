@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 BIN = Path("./2c")
 
 # Number of runs to average over for each configuration
-N_RUNS = 15
+N_RUNS = 10
 
 # Region of the complex plane to explore (x_l, y_l, x_r, y_r)
 REGION = (-2.0, -1.5, 1.0, 1.5)
@@ -22,10 +22,10 @@ REGION = (-2.0, -1.5, 1.0, 1.5)
 I_MAX = 3000
 
 # Fixed problem size for strong‑scaling tests
-STRONG_TOTAL_PIXELS = 1024 * 1024
+STRONG_TOTAL_PIXELS = 2048 * 2048
 
 # Starting tile size for weak‑scaling tests (per process/thread)
-WEAK_PIXELS_PER_PROC = 256 * 256
+WEAK_PIXELS_PER_PROC = 512 * 512
 
 # Numbers of MPI processes and OpenMP threads to test
 MAX_CORES = 24

@@ -6,7 +6,7 @@
 #SBATCH --ntasks=24
 #SBATCH --exclusive
 #SBATCH --mem=15gb
-#SBATCH --time=00:30:00
+#SBATCH --time=00:45:00
 #SBATCH --output=./logs/mandelbrot_out%j.out
 
 if [ ! -f .env ]; then
