@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --partition=THIN
 #SBATCH --job-name=mandelbrot_benchmark
-#SBATCH --nodes=2
-#SBATCH --ntasks-per-node=24
-#SBATCH --ntasks=48
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=6
+#SBATCH --ntasks=24
 #SBATCH --exclusive
 #SBATCH --mem=15gb
-#SBATCH --time=01:45:00
-#SBATCH --output=./logs/output%j.out
+#SBATCH --time=00:30:00
+#SBATCH --output=./logs/mandelbrot_out%j.out
 
 if [ ! -f .env ]; then
 	cp .env.example .env
