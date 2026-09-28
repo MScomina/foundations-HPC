@@ -75,7 +75,7 @@ def plot_task(task_name: str, task_data: dict, out_dir: pathlib.Path) -> None:
         )
     fig.suptitle(f"{task_name}")
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    out_path = out_dir / f"{task_name}.png"
+    out_path = out_dir / f"{task_name}.pdf"
     fig.savefig(out_path)
     plt.close(fig)
 
@@ -113,12 +113,12 @@ def plot_normalized_latency(data: dict[str, dict], out_dir: pathlib.Path) -> Non
             axes[idx].plot(n_processes, norm_means, label=VARIANT_TITLES[algo][int(variant_name)])
         axes[idx].set_title(algo)
         axes[idx].set_xlabel("N. Processes")
-        axes[idx].set_ylabel("Norm. Avg Latency")
+        axes[idx].set_ylabel("Norm. Avg Latency (μs/B)")
         axes[idx].grid(True, which="both", linestyle="--", linewidth=0.3)
         axes[idx].legend(title="Variant")
     fig.suptitle("Normalized Avg Latency per Algorithm")
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    out_path = out_dir / "normalized_latency.png"
+    out_path = out_dir / "normalized_latency.pdf"
     fig.savefig(out_path)
     plt.close(fig)
 
@@ -207,7 +207,7 @@ def configure_axes(ax, task_name: str, variant: str) -> None:
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Packet Size (Bytes)")
-    ax.set_ylabel("Avg Latency (us)")
+    ax.set_ylabel("Avg Latency (μs)")
     title_dict = VARIANT_TITLES[task_name]
     title = title_dict[int(variant)]
     ax.set_title(title)
@@ -249,26 +249,26 @@ def plot_fixed_sizes(task_name: str, task_data: dict, out_dir: pathlib.Path) -> 
             label = VARIANT_TITLES[task_name][int(variant_name)]
             plot_with_ci_and_data(ax, n_procs, means, cis, label=label, marker=None)
             ax.set_xlabel("N. Processes")
-            ax.set_ylabel("Avg Latency (us)")
+            ax.set_ylabel("Avg Latency (μs)")
             ax.set_title(f"{task_name} – fixed size {size} B")
             ax.grid(True, which="both", linestyle="--", linewidth=0.3)
             ax.legend(title="Variant")
 
     ax.set_xlabel("N. Processes")
-    ax.set_ylabel("Avg Latency (us)")
+    ax.set_ylabel("Avg Latency (μs)")
     ax.set_title(f"{task_name} – fixed size {size} B")
     ax.grid(True, which="both", linestyle="--", linewidth=0.3)
     fig.tight_layout(pad=1.2)
-    out_path = out_dir / f"{task_name}_fixed.png"
+    out_path = out_dir / f"{task_name}_fixed.pdf"
     fig.savefig(out_path)
     plt.close(fig)
 
 def main():
     parser = argparse.ArgumentParser(description="Plot OSU benchmark results.")
-    parser.add_argument("--json", default="osu_bcast_reduce_results.json",
+    parser.add_argument("--json", default="./hpc-1/osu_bcast_reduce_results.json",
                         help="Path to the JSON file produced by tests.py")
-    parser.add_argument("--out", default="results_plots",
-                        help="Output directory for PNG files")
+    parser.add_argument("--out", default="./hpc-1/results_plots",
+                        help="Output directory for PDF files")
     args = parser.parse_args()
 
     json_path = pathlib.Path(args.json)

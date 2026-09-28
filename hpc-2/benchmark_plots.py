@@ -72,7 +72,7 @@ def mpi_weak_scaling() -> list[Result]:
 
 	results: list[Result] = []
 	for p in NUM_PROCESSES:
-		n_x = n_y = int((WEAK_PIXELS_PER_PROC * p) ** 0.5)
+		n_x = n_y = int((WEAK_PIXELS_PER_PROC * (p-1)) ** 0.5)	# p-1 because the master shouldn't count in the scaling.
 		cmd = ["mpirun", "-np", str(p), "--bind-to", BIND_TO, str(BIN), str(n_x), str(n_y), *map(str, REGION), str(I_MAX)]
 		# OpenMP threads forced to 1
 		env = {"OMP_NUM_THREADS": "1"}
@@ -170,6 +170,7 @@ def plot_results(results: list[Result], title: str, filename: str) -> None:
 
 
 def main() -> None:
+	
 	print("Running MPI weak scaling…")
 	mpi_weak = mpi_weak_scaling()
 	print("MPI weak done.")
@@ -185,10 +186,10 @@ def main() -> None:
 
 	out_dir = Path("./benchmark_results")
 	out_dir.mkdir(exist_ok=True)
-	plot_results(mpi_weak, "MPI Weak Scaling", out_dir / "mpi_weak.png")
-	plot_results(mpi_strong, "MPI Strong Scaling", out_dir / "mpi_strong.png")
-	plot_results(omp_weak, "OpenMP Weak Scaling", out_dir / "omp_weak.png")
-	plot_results(omp_strong, "OpenMP Strong Scaling", out_dir / "omp_strong.png")
+	plot_results(mpi_weak, "MPI Weak Scaling", out_dir / "mpi_weak.pdf")
+	plot_results(mpi_strong, "MPI Strong Scaling", out_dir / "mpi_strong.pdf")
+	plot_results(omp_weak, "OpenMP Weak Scaling", out_dir / "omp_weak.pdf")
+	plot_results(omp_strong, "OpenMP Strong Scaling", out_dir / "omp_strong.pdf")
 	print("All plots saved to", out_dir, ".")
 
 
