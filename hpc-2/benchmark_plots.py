@@ -170,28 +170,24 @@ def plot_results(results: list[Result], title: str, filename: str) -> None:
 
 
 def main() -> None:
-	
-	print("Running MPI weak scaling…")
-	mpi_weak = mpi_weak_scaling()
-	print("MPI weak done.")
-	print("Running MPI strong scaling…")
-	mpi_strong = mpi_strong_scaling()
-	print("MPI strong done.")
-	print("Running OpenMP weak scaling…")
-	omp_weak = openmp_weak_scaling()
-	print("OpenMP weak done.")
-	print("Running OpenMP strong scaling…")
-	omp_strong = openmp_strong_scaling()
-	print("OpenMP strong done.")
+    out_dir = Path("./benchmark_results")
+    out_dir.mkdir(exist_ok=True)
 
-	out_dir = Path("./benchmark_results")
-	out_dir.mkdir(exist_ok=True)
-	plot_results(mpi_weak, "MPI Weak Scaling", out_dir / "mpi_weak.pdf")
-	plot_results(mpi_strong, "MPI Strong Scaling", out_dir / "mpi_strong.pdf")
-	plot_results(omp_weak, "OpenMP Weak Scaling", out_dir / "omp_weak.pdf")
-	plot_results(omp_strong, "OpenMP Strong Scaling", out_dir / "omp_strong.pdf")
-	print("All plots saved to", out_dir, ".")
+    def run_and_plot(func: callable, title: str, pdf_name: str) -> None:
+        pdf_path = out_dir / pdf_name
+        if pdf_path.exists():
+            print(f"{pdf_name} already exists – skipping benchmark.")
+            return
+        print(f"Running {title}…")
+        results = func()
+        print(f"{title} done.")
+        plot_results(results, title, pdf_path)
 
+    run_and_plot(mpi_weak_scaling, "MPI Weak Scaling", "mpi_weak.pdf")
+    run_and_plot(mpi_strong_scaling, "MPI Strong Scaling", "mpi_strong.pdf")
+    run_and_plot(openmp_weak_scaling, "OpenMP Weak Scaling", "omp_weak.pdf")
+    run_and_plot(openmp_strong_scaling, "OpenMP Strong Scaling", "omp_strong.pdf")
+    print("All plots saved to", out_dir, ".")
 
 if __name__ == "__main__":
 	main()
