@@ -265,9 +265,9 @@ def plot_fixed_sizes(task_name: str, task_data: dict, out_dir: pathlib.Path) -> 
 
 def main():
     parser = argparse.ArgumentParser(description="Plot OSU benchmark results.")
-    parser.add_argument("--json", default="./hpc-1/osu_bcast_reduce_results.json",
+    parser.add_argument("--json", default="./osu_bcast_reduce_results.json",
                         help="Path to the JSON file produced by tests.py")
-    parser.add_argument("--out", default="./hpc-1/results_plots",
+    parser.add_argument("--out", default="./results_plots",
                         help="Output directory for PDF files")
     args = parser.parse_args()
 
