@@ -1,0 +1,43 @@
+flowchart LR
+    User["User<br/>Web Browser"]
+
+    subgraph Host["Local Host"]
+        direction TB
+
+        Proxy["Optional Reverse Proxy<br/>Caddy / Traefik / Nginx"]
+        VPN["Optional VPN<br/>Client / Daemon"]
+
+        subgraph Compose["Docker Compose"]
+            direction TB
+
+            Nextcloud["Nextcloud<br/>nextcloud:stable"]
+            MariaDB["MariaDB<br/>mariadb:11.8.9"]
+
+            NCVolume[("nextcloud_data<br/>Persistent Volume")]
+            DBVolume[("db_data<br/>Persistent Volume")]
+        end
+    end
+
+    User -->|"HTTP :7489"| Nextcloud
+    User -.->|"HTTPS"| Proxy
+    Proxy -.-> Nextcloud
+
+    User -.->|"VPN network"| VPN
+    VPN -.-> Nextcloud
+
+    Nextcloud -->|"Database connection"| MariaDB
+
+    NCVolume --- Nextcloud
+    DBVolume --- MariaDB
+
+    classDef user fill:#e8f1ff,stroke:#2563eb,stroke-width:2px,color:#111827
+    classDef app fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827
+    classDef db fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827
+    classDef volume fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#111827
+    classDef optional fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,stroke-dasharray:5 5,color:#111827
+
+    class User user
+    class Nextcloud app
+    class MariaDB db
+    class NCVolume,DBVolume volume
+    class Proxy,VPN optional

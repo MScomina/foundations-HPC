@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 BIN = Path("./2c")
 
 # Number of runs to average over for each configuration
-N_RUNS = 10
+N_RUNS = 5
 
 # Region of the complex plane to explore (x_l, y_l, x_r, y_r)
 REGION = (0.35787121, 0.1081397025, 0.35787122, 0.1081397125)
@@ -178,7 +178,7 @@ def main() -> None:
         if pdf_path.exists():
             print(f"{pdf_name} already exists – skipping benchmark.")
             return
-        print(f"Running {title}…")
+        print(f"Running {title}...")
         results = func()
         print(f"{title} done.")
         plot_results(results, title, pdf_path)

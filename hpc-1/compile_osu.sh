@@ -5,6 +5,12 @@
 #SBATCH --mem=15gb
 #SBATCH --time=00:15:00
 #SBATCH --output=./logs/compilation%j.out
+
+if [ ! -f .env ]; then
+	cp .env.example .env
+	echo "Created .env from .env.example."
+fi
+
 set -a; source .env set +a
 
 module load "$MPI_MODULE"

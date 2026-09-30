@@ -1,5 +1,5 @@
 services:
-  db:
+  database:
     #user: ${CONTAINER_USER}
     image: mariadb:11.8.9
     restart: unless-stopped
@@ -11,7 +11,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
-  app:
+  nextcloud:
     #user: ${CONTAINER_USER}
     image: nextcloud:stable
     restart: unless-stopped
