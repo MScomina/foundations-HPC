@@ -22,3 +22,6 @@ All steps are executed as SLURM batch jobs:
 
 ### Summary
 After the three jobs finish you will find the plotted figures in `results_plots/` and the raw JSON data in the directory created by `run_osu.sh`.
+---
+   *Remember to use the proper formatting depending on what SLURM version and settings you are dealing with.*
+   *ORFEO requires you to provide the account type when running the jobs: `sbatch -A <account-type> [command]`*

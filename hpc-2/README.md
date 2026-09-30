@@ -12,15 +12,19 @@ All steps are executed as SLURM batch jobs. The workflow consists of three stage
    ```bash
    sbatch run_benchmarks.sh
    ```
-   This job launches the Python benchmark harness (`benchmark_plots.py`) which in turn drives the C++ program on the requested number of nodes.
+   This job launches the Python benchmark harness (`benchmark_plots.py`) which in turn drives the C program on the requested number of nodes.
 
 3. **Run a single instance** – launch one copy of the 2c program.
    ```bash
    sbatch run_mandelbrot.sh
    ```
    The script simply submits a single‑node SLURM job that runs the compiled `2c` binary.
+   **Warning:** The program has to be compiled already!
 
 ### Output
 * Benchmark logs and plots are written to the `logs/` and `results_plots/` directories inside `hpc-2/`.
 * The Mandelbrot computation produces an output image `mandelbrot.pgm` in the same folder.
 * The `run_benchmarks.sh` script also produces a `benchmark_plots.py`‑generated report.
+---
+   *Remember to use the proper formatting depending on what SLURM version and settings you are dealing with.*
+   *ORFEO requires you to provide the account type when running the jobs: `sbatch -A <account-type> [command]`*
