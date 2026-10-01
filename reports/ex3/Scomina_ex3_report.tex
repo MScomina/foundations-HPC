@@ -5,12 +5,15 @@
 \usepackage{hyperref}
 
 \begin{document}
+%-------------------------------
+%	TITLE SECTION
+%-------------------------------
 
 \fancyhead[C]{}
-\hrule \medskip
+\hrule \medskip % Upper rule
 \begin{minipage}{0.295\textwidth} 
   \raggedright
-  \scriptsize
+  \scriptsize % or \tiny
   Michele Scomina \hfill\\   
   IN2000214\hfill\\
   mscomina@gmail.com\hfill\\
@@ -111,7 +114,7 @@ docker compose ps
 \end{verbatim}
 
 The Nextcloud web interface is available at
-\texttt{http://localhost:7489}.
+\texttt{http://localhost:7489}, or at the IP of the local device it's hosted on.
 
 \section{User and File Management}
 
@@ -135,7 +138,7 @@ Authentication and authorization are delegated to Nextcloud. Users
 must authenticate before accessing their files, while administrative
 operations are restricted to administrator accounts.
 
-\subsection{Credential Management}
+\subsection{Credential Management and permissions}
 
 Database credentials and the initial administrator password are
 provided through environment variables rather than being hard-coded
@@ -147,13 +150,11 @@ managed using a dedicated secrets mechanism, such as
 \href{https://docs.docker.com/engine/swarm/secrets/}{Docker Secrets}.
 
 As an additional security measure, the deployment could also be
-implemented using Podman in rootless mode. This would allow the
+implemented \href{https://docs.docker.com/engine/security/rootless/}
+{using Docker in rootless mode}. This would allow the
 containers to run without requiring root privileges on the host,
 reducing the privileges available to container processes and limiting
-the potential impact of a compromised container. Podman can be used
-with common container workflows and could therefore be considered as
-an alternative to Docker for deployments where minimizing
-host-level privileges is a priority.
+the potential impact of a compromised container.
 
 \subsection{Network Security and HTTPS}
 
